@@ -9,7 +9,7 @@ class HashTableEntry:
 
 
 # Hash table can't have fewer than this many slots
-MIN_CAPACITY = 10
+MIN_CAPACITY = 8
 
 
 class HashTable:
@@ -23,10 +23,13 @@ class HashTable:
     def __init__(self, capacity):
         self.capacity = capacity
 
-        if self.capacity < 10:
-            self.capacity = 10
+        if self.capacity < 8:
+            self.capacity = 8
+            print("Warning: Capacity must be >= 8, it was automatically corrected for your hashtable.")
             
         self.array = [None] * self.capacity
+        self.load = 0
+        self.loadFactor = self.load / self.capacity
 
     def get_num_slots(self):
         """
@@ -72,7 +75,7 @@ class HashTable:
         for byte in byte_array:
             hash = ((hash * 33) ^ byte) % 0x100000000
 
-        return hash % 10
+        return hash % 8
 
 
     def hash_index(self, key):
@@ -92,7 +95,7 @@ class HashTable:
         Implement this.
         """
         # Your code here
-        index = self.djb2(key)
+        index = self.djb2(key) % self.capacity
         if self.array[index] is not None:
             for kvp in self.array[index]:
                 if kvp[0] == key:
@@ -100,9 +103,17 @@ class HashTable:
                     break
                 else:
                     self.array[index].append([key, value])
+                    self.load += 1
         else:
             self.array[index] = []
             self.array[index].append([key, value])
+            self.load += 1
+
+        if self.loadFactor > 0.7:
+            self.capacity *= 2
+            for i in range(len(self.array)):
+                for j in range(len(self.array[i])):
+                    
 
 
     def delete(self, key):
@@ -114,13 +125,16 @@ class HashTable:
         Implement this.
         """
         # Your code here
-        index = self.djb2(key)
+        index = self.djb2(key) % self.capacity
         if self.array[index] is None:
             return KeyError()
         else:
             for i in list(range(len(self.array[index]))):
                 if self.array[index][i][0] == key:
                     del self.array[index][i]
+                    self.load -= 1
+                # if self.array[index][i] == key:
+                #     del self.array[index][i]
         
 
 
@@ -133,7 +147,7 @@ class HashTable:
         Implement this.
         """
         # Your code here
-        index = self.djb2(key)
+        index = self.djb2(key) % self.capacity
         if self.array[index] is None:
             return None
         else:
